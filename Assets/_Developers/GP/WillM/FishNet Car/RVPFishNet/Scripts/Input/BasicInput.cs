@@ -98,7 +98,7 @@ namespace RVP
             if (!string.IsNullOrEmpty(boostButton))
             {
                 // md.BoostButton = Input.GetButton(boostButton);
-                md.BoostButton = useNewInput ? InputManager.Instance.HandleBrakeInput().IsPressed()  : Input.GetButton(boostButton);
+                md.BoostButton = useNewInput ? InputManager.Instance.HandleBoostInput().IsPressed()  : Input.GetButton(boostButton);
             }
 
             if (!string.IsNullOrEmpty(pitchAxis))

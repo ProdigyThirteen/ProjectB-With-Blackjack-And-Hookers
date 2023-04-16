@@ -1,10 +1,11 @@
 using FishNet.Object;
+using FishNet.Object.Synchronizing;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Weapon : NetworkBehaviour
+public class Weapon : NetworkBehaviour
 {
     public enum WeaponState { Idle, Firing, Reloading }
 
@@ -29,14 +30,9 @@ public abstract class Weapon : NetworkBehaviour
     [SerializeField] protected WeaponSO weaponSO;
     [SerializeField] protected Transform[] firePoint;
 
-    [Viewable] [SerializeField] protected int currentAmmo;
-    [Viewable] [SerializeField] protected WeaponState weaponState;
-    [Viewable] [SerializeField] protected float timer = 0;
-
-    public event EventHandler OnAmmoChanged;
-    public event EventHandler OnReloadStart;
-    public event EventHandler<float> OnReloading;
-    public event EventHandler OnReloadEnd;
+    [SerializeField][SyncVar] protected int currentAmmo;
+    [SerializeField] protected WeaponState weaponState;
+    [SerializeField] protected float timer = 0;
 
     protected Vector3 aimPoint;
     public void SetAim(Vector3 AimPosition) => aimPoint = AimPosition;
@@ -47,6 +43,7 @@ public abstract class Weapon : NetworkBehaviour
 
     public string FireSoundID =>fireSoundID;
 
+    [ServerRpc]
     protected virtual void Start()
     {
         ModifyAmmo(weaponSO.maxAmmo);
@@ -54,70 +51,43 @@ public abstract class Weapon : NetworkBehaviour
 
     protected virtual void Update()
     {
-        NewHandleHorizontalAndVerticalRotation();
+        HandleRotation();
     }
 
-    private void NewHandleHorizontalAndVerticalRotation()
+    private void HandleRotation()
     {
         Vector3 targetPositionInLocalSpace = aimPoint;
+        
         targetPositionInLocalSpace.y = rotateVertical ? Mathf.Clamp(targetPositionInLocalSpace.y, -upRotationLimit, downRotationLimit) : 0;
         targetPositionInLocalSpace.x = Mathf.Clamp(targetPositionInLocalSpace.x, -leftRotationLimit, rightRotationLimit);
+
         Vector3 limitedRotation = Vector3.RotateTowards(Vector3.forward, targetPositionInLocalSpace, float.MaxValue, float.MaxValue);
         Quaternion whereToRotate = Quaternion.LookRotation(limitedRotation);
+        
         content.rotation = Quaternion.RotateTowards(content.rotation, whereToRotate, turnSpeed * Time.deltaTime);
     }
 
+    [ServerRpc]
     public void Shoot(Vector3 targetPos, Action onFireSuccess = null)
     {
-        if (weaponState == WeaponState.Reloading) return;
-
         if (timer <= 0)
         {
-            TryShootProjectile(targetPos, onFireSuccess);
+            ShootProjectile(targetPos, onFireSuccess);
+            ModifyAmmo(-1);
             timer = weaponSO.fireRate;
         }
         else timer -= Time.deltaTime;
     }
 
-    public void TryShootProjectile(Vector3 targetPos, Action onFireSuccess = null)
-    {
-        if (currentAmmo > 0) ShootProjectile(targetPos, onFireSuccess); else if (weaponState != WeaponState.Reloading) Reload();
-    }
-
     public virtual void ShootProjectile(Vector3 targetPos, Action onFireSuccess = null)
     {
-        weaponState = WeaponState.Firing;
-        onFireSuccess?.Invoke();
+        if (currentAmmo > 0)
+            weaponState = WeaponState.Firing;
     }
 
+    [ServerRpc (RequireOwnership = true)]
     public void ModifyAmmo(int newValue)
     {
-        currentAmmo = newValue;
-        OnAmmoChanged?.Invoke(this, EventArgs.Empty);
-
-        if(currentAmmo <= 0) Reload();
-    }
-
-    public void Reload()
-    {
-        if (weaponState == WeaponState.Reloading) return;
-        weaponState = WeaponState.Reloading;
-        StartCoroutine(ReloadRoutine());
-    }
-
-    public IEnumerator ReloadRoutine()
-    {
-        OnReloadStart?.Invoke(this, EventArgs.Empty);
-        float reloadTime = weaponSO.reloadTime;
-        weaponState = WeaponState.Reloading;
-        while (reloadTime > 0)
-        {
-            reloadTime -= Time.deltaTime;
-            OnReloading?.Invoke(this, reloadTime / weaponSO.reloadTime);
-            yield return null;
-        }
-        ModifyAmmo(weaponSO.maxAmmo);
-        weaponState = WeaponState.Idle;
-        OnReloadEnd?.Invoke(this, EventArgs.Empty);
+        currentAmmo += newValue;
     }
 }

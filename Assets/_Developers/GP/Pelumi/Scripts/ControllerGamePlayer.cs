@@ -5,28 +5,12 @@ using UnityEngine;
 
 public class ControllerGamePlayer : GamePlayer
 {
-    private void Start()
-    {
-        SetUpPakageTracker();
-    }
-
-    public void SetUpPakageTracker()
-    {
-        PackageTracker.Instance.SetCarPakageSystem(gameObject);
-    }
-
-    public void OnHealthChanged(float normalisedValue)
-    {
-        GameMenu.GetInstance()?.SetHealthView(normalisedValue);
-    }
-
     public override void HandleDeath(HealthSystem healthSystem)
     {
         if (!gameObject.TryGetComponent(out GamePlayer gamePlayer))
             return;
 
-        transform.position = gamePlayer.PlayerTeamData.GetRandomSpawnPoint();
-        transform.rotation = Quaternion.identity;
+        transform.SetPositionAndRotation(gamePlayer.PlayerTeamData.GetRandomSpawnPoint(), Quaternion.identity);
 
         healthSystem.RestoreHealth(healthSystem.MaximumHealth);
 

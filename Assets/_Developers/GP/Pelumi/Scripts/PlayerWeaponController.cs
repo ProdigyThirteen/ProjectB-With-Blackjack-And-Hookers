@@ -8,10 +8,10 @@ public class PlayerWeaponController : NetworkBehaviour
 {
     [SerializeField] private bool debugMode;
     [SerializeField] private List<Weapon> allWeapon;
-    [SerializeField] private GameEvent _onOnAmmoChanged;
-    [SerializeField] private GameEvent _onReloadStart;
-    [SerializeField] private GameEvent _onReloading;
-    [SerializeField] private GameEvent _onReloadEnd;
+    //[SerializeField] private GameEvent _onOnAmmoChanged;
+    //[SerializeField] private GameEvent _onReloadStart;
+    //[SerializeField] private GameEvent _onReloading;
+    //[SerializeField] private GameEvent _onReloadEnd;
     [SerializeField] private LayerMask detectMask;
     [SerializeField] private Transform gunSocket;
 
@@ -20,68 +20,15 @@ public class PlayerWeaponController : NetworkBehaviour
     private void OnEnable()
     {
         currentWeapon = allWeapon[0];
-        SubscribeWeaponEvent();
-    }
-
-    private void WeaponHandler_OnAmmoChanged(object sender, System.EventArgs e)
-    {
-        _onOnAmmoChanged.Raise(this, new int[] { currentWeapon.CurrentAmmo, currentWeapon.MaxAmmo });
-    }
-
-    private void WeaponHandler_OnReloadStart(object sender, System.EventArgs e)
-    {
-        _onReloadStart.Raise(this, null);
-    }
-
-    private void WeaponHandler_OnReloadDuration(object sender, float value)
-    {
-        _onReloading.Raise(this, value);
-    }
-
-    private void WeaponHandler_OnReloadEnd(object sender, EventArgs e)
-    {
-        _onReloadEnd.Raise(this, null);
-    }
-
-    public void SubscribeWeaponEvent()
-    {
-        currentWeapon.OnAmmoChanged += WeaponHandler_OnAmmoChanged;
-        currentWeapon.OnReloadStart += WeaponHandler_OnReloadStart;
-        currentWeapon.OnReloading += WeaponHandler_OnReloadDuration;
-        currentWeapon.OnReloadEnd += WeaponHandler_OnReloadEnd;
-    }
-
-    public void UnSubscribeWeaponEvent()
-    {
-        currentWeapon.OnAmmoChanged += WeaponHandler_OnAmmoChanged;
-        currentWeapon.OnReloadStart += WeaponHandler_OnReloadStart;
-        currentWeapon.OnReloading += WeaponHandler_OnReloadDuration;
-        currentWeapon.OnReloadEnd += WeaponHandler_OnReloadEnd;
     }
 
     void Update()
     {
-        if (!base.IsOwner) return;
-
-        DebugSwitchWeapons();
-
         if (debugMode) DebugMouse();
 
         currentWeapon.SetAim(Camera.main.transform.forward * 200.0f);
-        if (currentWeapon is Catapult catapult) catapult.DrawPath(GetTargetPos(currentWeapon.Range));
-        if (InputManager.Instance.HandleFireInput().IsPressed()) currentWeapon.Shoot(GetTargetPos(currentWeapon.Range), OnFireSuccess);
-    }
-
-    public void DebugSwitchWeapons()
-    {
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            currentWeapon.transform.GetChild(0).gameObject.SetActive(false);
-            UnSubscribeWeaponEvent();
-            currentWeapon = allWeapon[ allWeapon.IndexOf(currentWeapon)  == allWeapon.Count  - 1 ? 0 : allWeapon.IndexOf(currentWeapon) + 1];
-            currentWeapon.transform.GetChild(0).gameObject.SetActive(true);
-            SubscribeWeaponEvent();
-        }
+        if (InputManager.Instance.HandleFireInput().IsPressed()) 
+            currentWeapon.Shoot(GetTargetPos(currentWeapon.Range), OnFireSuccess);
     }
 
     public void OnFireSuccess()
