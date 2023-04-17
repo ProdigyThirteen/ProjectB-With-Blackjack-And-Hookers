@@ -63,9 +63,12 @@ public class DartProjectile : Projectile
 
     protected void DamageEntity(GameObject damageObject)
     {
-        Debug.Log(gameObject.name);
+        //Debug.Log(gameObject.name);
         IDamageable healthSystem = damageObject.GetComponent<IDamageable>();
-        if (healthSystem == null) return;
+        
+        if (healthSystem == null) 
+            return;
+        
         healthSystem.ReduceHealth(_damageAmount);
         OnDamage(_damageAmount);
     }

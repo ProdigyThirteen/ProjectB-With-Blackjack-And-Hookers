@@ -3,6 +3,7 @@ using FishNet.Object.Synchronizing;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 public class Weapon : NetworkBehaviour
@@ -30,9 +31,9 @@ public class Weapon : NetworkBehaviour
     [SerializeField] protected WeaponSO weaponSO;
     [SerializeField] protected Transform[] firePoint;
 
-    [SerializeField][SyncVar] protected int currentAmmo;
+    [SerializeField][SyncVar] protected int currentAmmo = 0;
     [SerializeField] protected WeaponState weaponState;
-    [SerializeField] protected float timer = 0;
+    [SerializeField][SyncVar] protected float timer = 0;
 
     protected Vector3 aimPoint;
     public void SetAim(Vector3 AimPosition) => aimPoint = AimPosition;
@@ -43,15 +44,32 @@ public class Weapon : NetworkBehaviour
 
     public string FireSoundID =>fireSoundID;
 
-    [ServerRpc]
-    protected virtual void Start()
+    //public override void OnStartServer();
+    //{        
+    //    base.OnStartServer();
+
+    //    Debug.Log("Start called");
+    //    ModifyAmmo(weaponSO.maxAmmo);
+    //    timer = weaponSO.fireRate;
+    //}
+
+    public override void OnStartClient()
     {
+        base.OnStartClient();
+
+        Debug.Log("Start called");
         ModifyAmmo(weaponSO.maxAmmo);
+        timer = weaponSO.fireRate;
     }
 
     protected virtual void Update()
     {
+        if (!IsOwner)
+            return;
+
         HandleRotation();
+
+        timer -= Time.deltaTime;
     }
 
     private void HandleRotation()
@@ -68,26 +86,40 @@ public class Weapon : NetworkBehaviour
     }
 
     [ServerRpc]
-    public void Shoot(Vector3 targetPos, Action onFireSuccess = null)
+    public void Shoot(Vector3 targetPos)
     {
-        if (timer <= 0)
+        if (timer <= 0 && currentAmmo > 0)
         {
-            ShootProjectile(targetPos, onFireSuccess);
+            Debug.Log("Shooting");
+            ShootProjectile(targetPos);
             ModifyAmmo(-1);
             timer = weaponSO.fireRate;
         }
-        else timer -= Time.deltaTime;
+        else 
+        {
+            Debug.Log("Timer: " + timer + " Current Ammo: " + currentAmmo);
+        }
     }
 
-    public virtual void ShootProjectile(Vector3 targetPos, Action onFireSuccess = null)
+    private void ShootProjectile(Vector3 targetPos)
     {
-        if (currentAmmo > 0)
-            weaponState = WeaponState.Firing;
+        //if (currentAmmo > 0)
+        //    weaponState = WeaponState.Firing;
+
+        foreach (Transform point in firePoint)
+        {
+            Projectile projectile = Instantiate(weaponSO.projectile, point.position, point.rotation);
+            projectile.GetComponent<DartProjectile>().SetUp(weaponSO.projectileSpeed);
+            ServerManager.Spawn(projectile.gameObject, Owner);
+            //projectile.SetTarget(targetPos);
+        }
     }
 
     [ServerRpc (RequireOwnership = true)]
-    public void ModifyAmmo(int newValue)
+    private void ModifyAmmo(int newValue)
     {
+        Debug.Log("Modifying ammo by " + newValue);
         currentAmmo += newValue;
+        currentAmmo = Mathf.Clamp(currentAmmo, 0, weaponSO.maxAmmo);
     }
 }

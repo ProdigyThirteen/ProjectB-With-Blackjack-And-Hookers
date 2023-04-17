@@ -15599,19 +15599,11 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 7115402400862813524}
   _networkObjectCache: {fileID: 7115402400862813524}
   debugMode: 0
-  allWeapon:
-  - {fileID: 924067890231493878}
-  - {fileID: 0}
-  - {fileID: 0}
-  _onOnAmmoChanged: {fileID: 11400000, guid: 939b6139d5c6a5d47b0b1a64c06aadc4, type: 2}
-  _onReloadStart: {fileID: 11400000, guid: 298e4d990f18343478ce00a4397a7d27, type: 2}
-  _onReloading: {fileID: 11400000, guid: 974087877887f7f4fb952b0138e44d54, type: 2}
-  _onReloadEnd: {fileID: 11400000, guid: c04027b23b249944f96b364eb83081e6, type: 2}
   detectMask:
     serializedVersion: 2
     m_Bits: 24575
   gunSocket: {fileID: 1750455242733553118}
-  currentWeapon: {fileID: 0}
+  currentWeapon: {fileID: 924067890231493878}
 --- !u!1 &6482612975936952463
 GameObject:
   m_ObjectHideFlags: 0

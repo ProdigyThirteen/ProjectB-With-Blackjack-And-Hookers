@@ -7,28 +7,28 @@ using UnityEngine;
 public class PlayerWeaponController : NetworkBehaviour
 {
     [SerializeField] private bool debugMode;
-    [SerializeField] private List<Weapon> allWeapon;
-    //[SerializeField] private GameEvent _onOnAmmoChanged;
-    //[SerializeField] private GameEvent _onReloadStart;
-    //[SerializeField] private GameEvent _onReloading;
-    //[SerializeField] private GameEvent _onReloadEnd;
+    //[SerializeField] private List<Weapon> allWeapon;
     [SerializeField] private LayerMask detectMask;
     [SerializeField] private Transform gunSocket;
 
-    [Viewable] [SerializeField] private Weapon currentWeapon;
+    [SerializeField] private Weapon currentWeapon;
 
-    private void OnEnable()
-    {
-        currentWeapon = allWeapon[0];
-    }
+    //private void OnEnable()
+    //{
+    //    Debug.Log("PlayerWeaponController.OnEnable");
+    //    //currentWeapon = allWeapon[0];
+    //}
 
     void Update()
     {
         if (debugMode) DebugMouse();
 
         currentWeapon.SetAim(Camera.main.transform.forward * 200.0f);
-        if (InputManager.Instance.HandleFireInput().IsPressed()) 
-            currentWeapon.Shoot(GetTargetPos(currentWeapon.Range), OnFireSuccess);
+        
+        if (InputManager.Instance.HandleFireInput().IsPressed())
+        { 
+            currentWeapon.Shoot(GetTargetPos(currentWeapon.Range));
+        }
     }
 
     public void OnFireSuccess()
@@ -38,7 +38,11 @@ public class PlayerWeaponController : NetworkBehaviour
 
     void DebugMouse()
     {
-        if (Input.GetKeyDown(KeyCode.Escape)) Cursor.lockState = CursorLockMode.None;  else if (Input.GetMouseButtonDown(0)) Cursor.lockState = CursorLockMode.Locked;
+        if (Input.GetKeyDown(KeyCode.Escape)) 
+            Cursor.lockState = CursorLockMode.None;  
+        
+        else if (Input.GetMouseButtonDown(0)) 
+            Cursor.lockState = CursorLockMode.Locked;
     }
 
     public Vector3 GetTargetPos(float range)
